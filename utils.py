@@ -1,11 +1,32 @@
 import sys
 import urllib
 import urllib2
+import hashlib
 from pyquery import PyQuery as pq
 
 
 dloc = "downloads/"
-baseurl = "http://en.wikipedia.org/wiki/"
+baseurl = "http://en.wikipedia.org"
+
+def download_image(url):
+    """Download the image from the given url and add it to the assets"""
+    url = "http:"+url
+    opener = urllib2.build_opener()
+    opener.addheaders = [('User-agent', 'Zimbalaka/1.0 based on OpenZim')]
+    infile = opener.open(url)
+    parts = url.strip().split("/")
+    ext = url.strip().split(".")[-1]
+    # noticed strange queries so hardcoding png as extension
+    if len(ext) > 3:
+        ext = 'png'
+    m = hashlib.md5()
+    m.update(parts[-1].encode("utf-8"))
+    md5name = m.hexdigest()[0:8]
+    filename = "assets/" + md5name + "." + ext
+    f = open(dloc + filename, 'w')
+    f.write(infile.read())
+    f.close()
+    return filename
 
 def clean_page(html):
     """Cleans the html read from the url opener"""
@@ -15,7 +36,7 @@ def clean_page(html):
     #mw-navigation,#footer,script,.suggestions,#siteSub,#contentSub,#jump-to-nav,
     .hatnote,.reference,.ambox,.portal,#Notes,.reflist,#References,.refbegin,
     .printfooter,#catlinks,.visualClear,#mw-indicator-pp-default,#toc,.mw-editsection,
-    .navbox,.sistersitebox,link,#coordinates
+    .navbox,.sistersitebox,link,#coordinates,.references,sup.noprint
     """
     seclist = sections.split(",")
     for sec in seclist:
@@ -23,11 +44,19 @@ def clean_page(html):
     # add the styles
     doc('head').append('<link rel="stylesheet" href="assets/style1.css" type="text/css">')
     doc('head').append('<link rel="stylesheet" href="assets/style2.css" type="text/css">')
+    # place the images
+    for image in doc('img'):
+        localfile = download_image(pq(image).attr('src'))
+        pq(image).attr('src', localfile)
+    # fix the links
+    for link in doc('a'):
+        absolute = baseurl + pq(link).attr('href')
+        pq(link).attr('href', absolute)
     return doc.html().encode("utf-8")
 
 def download_file(title):
     """Downloads the file from wikipedia with all the associated files"""
-    url = baseurl + urllib.quote( title.encode('utf-8') )
+    url = baseurl + '/wiki/' + urllib.quote( title.encode('utf-8') )
     opener = urllib2.build_opener()
     opener.addheaders = [('User-agent', 'Zimbalaka/1.0 based on OpenZim')]
     infile = opener.open(url)
