@@ -98,6 +98,7 @@ def zimit(titles):
         zimwriterfs --welcome=index.html --favicon=m/favicon.png --language=fra --title=foobar --description=mydescription \
                 --creator=Wikipedia --publisher=Kiwix ./my_project_html_directory my_project.zim
     """
+    print 'zimit has been called'
     index = pq('''<html><head>
         <title>WelcomeePage</title>
         </head>

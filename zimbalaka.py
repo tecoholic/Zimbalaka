@@ -1,10 +1,15 @@
-from flask import Flask
+from flask import Flask, request, render_template, url_for, \
+        send_file
+
+from utils import zimit
 
 app = Flask(__name__)
 
-@app.route("/")
+@app.route("/", methods=['POST', 'GET'])
 def index():
-    return "Welcome to Zimalaka"
+    if request.method == 'GET':
+        return render_template('index.html')
 
 if __name__ == "__main__":
+    app.debug = True
     app.run()
