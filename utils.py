@@ -17,7 +17,7 @@ def download_image(url):
     url = "http:"+url
     opener = urllib2.build_opener()
     opener.addheaders = [('User-agent', 'Zimbalaka/1.0 based on OpenZim')]
-    print "Downloading .. ", url
+    # print "Downloading .. ", url
     infile = opener.open(url)
     parts = url.strip().split("/")
     ext = url.strip().split(".")[-1]
@@ -40,8 +40,8 @@ def clean_page(html):
     sections="""#mw-page-base,#mw-head-base,#top,#siteNotice,.mw-indicators,
     #mw-navigation,#footer,script,.suggestions,#siteSub,#contentSub,#jump-to-nav,
     .hatnote,.reference,.ambox,.portal,#Notes,.reflist,#References,.refbegin,
-    .printfooter,#catlinks,.visualClear,#mw-indicator-pp-default,#toc,.mw-editsection,
-    .navbox,.sistersitebox,link,#coordinates,.references,sup.noprint
+    .#printfooter,#catlinks,.visualClear,#mw-indicator-pp-default,#toc,.mw-editsection,
+    .navbox,.sistersitebox,link,#coordinates,.references,sup.no#print
     """
     seclist = sections.split(",")
     for sec in seclist:
@@ -66,7 +66,7 @@ def download_file(title):
     url = baseurl + '/wiki/' + urllib.quote( title.encode('utf-8') )
     opener = urllib2.build_opener()
     opener.addheaders = [('User-agent', 'Zimbalaka/1.0 based on OpenZim')]
-    print "Opening .. ", url
+    #print "Opening .. ", url
     infile = opener.open(url)
     page = infile.read()
     # clean the page now
@@ -123,7 +123,7 @@ def zimit(titles):
     zimfile = os.path.join(dloc, title+".zim")
     command = "/usr/local/bin/zimwriterfs -w "+w+" -f "+f+" -l "+l+" -t "+t+" -d "+d+" -c "+c+" -p "+p+" "+directory+" "+zimfile
     call(command, shell=True)
-    print zimfile
+    #print zimfile
     return zimfile
 
 
