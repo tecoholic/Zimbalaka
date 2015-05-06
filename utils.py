@@ -2,6 +2,7 @@ import sys
 import urllib
 import urllib2
 import hashlib
+from subprocess import call
 from pyquery import PyQuery as pq
 
 
@@ -67,11 +68,45 @@ def download_file(title):
     f = open(htmlname, 'w')
     f.write(page)
     f.close()
+    return htmlname
 
+def zimit(title):
+    """Prepare a zim file for the given title using zimwriterfs command line tool
+
+    Usage: zimwriterfs [mandatory arguments] [optional arguments] HTML_DIRECTORY ZIM_FILE
+
+     Mandatory arguments:
+     -w, --welcome      path of default/main HTML page. The path must be relative to HTML_DIRECTORY.
+     -f, --favicon      path of ZIM file favicon. The path must be relative to HTML_DIRECTORY and the image a 48x48 PNG.
+     -l, --language     language code of the content in ISO639-3
+     -t, --title        title of the ZIM file
+     -d, --description  short description of the content
+     -c, --creator      creator(s) of the content
+     -p, --publisher    creator of the ZIM file itself
+
+    HTML_DIRECTORY      is the path of the directory containing the HTML pages you want to put in the ZIM file,
+    ZIM_FILE        is the path of the ZIM file you want to obtain.
+
+    Example:
+        zimwriterfs --welcome=index.html --favicon=m/favicon.png --language=fra --title=foobar --description=mydescription \
+                --creator=Wikipedia --publisher=Kiwix ./my_project_html_directory my_project.zim
+    """
+    htmlfile = download_file(title)
+    w = title+".html" # change this when packaging more than 1 file
+    f = "assets/wiki_w.png"
+    l = "en" # change this when multiple languages are supported
+    t = title
+    d = "'Wikipedia article on " + title +"'"
+    c = "'Wikipedia Contributors'"
+    p = "'Zimbalaka 1.0'"
+    directory = dloc
+    zimfile = dloc + title + ".zim"
+    command = "/usr/local/bin/zimwriterfs -w "+w+" -f "+f+" -l "+l+" -t "+t+" -d "+d+" -c "+c+" -p "+p+" "+directory+" "+zimfile
+    call(command, shell=True)
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print "insufficient params"
     else:
-        download_file(sys.argv[1])
+        zimit(sys.argv[1])
