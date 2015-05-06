@@ -9,6 +9,8 @@ app = Flask(__name__)
 def index():
     if request.method == 'GET':
         return render_template('index.html')
+    if request.method == 'POST':
+        return 'Process started'
 
 if __name__ == "__main__":
     app.debug = True
