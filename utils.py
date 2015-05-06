@@ -40,8 +40,8 @@ def clean_page(html):
     sections="""#mw-page-base,#mw-head-base,#top,#siteNotice,.mw-indicators,
     #mw-navigation,#footer,script,.suggestions,#siteSub,#contentSub,#jump-to-nav,
     .hatnote,.reference,.ambox,.portal,#Notes,.reflist,#References,.refbegin,
-    .#printfooter,#catlinks,.visualClear,#mw-indicator-pp-default,#toc,.mw-editsection,
-    .navbox,.sistersitebox,link,#coordinates,.references,sup.no#print
+    #printfooter,#catlinks,.visualClear,#mw-indicator-pp-default,#toc,.mw-editsection,
+    .navbox,.sistersitebox,link,#coordinates,.references,sup.no#print,.stub
     """
     seclist = sections.split(",")
     for sec in seclist:
