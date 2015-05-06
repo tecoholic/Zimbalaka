@@ -1,17 +1,45 @@
 {% extends "base.html" %}
 {% block body %}
 
+<div id="formdiv" class="row show">
 <form action="/" method="post">
     <div class="form-group">
-    	<label for="title">Title</label>
-    	<input id="title" class="form-control" type="text">
+        <label for="title">Title</label>
+        <input id="title" class="form-control" type="text">
     </div>
     <div class="form-group">
         <label for="list">Titles of the articles</label>
         <textarea rows="10" id="list" class="form-control" placeholder="One per line"></textarea>
     </div>
-    <button class="btn btn-primary btn-lg" type="submit">Zim it!</button>
+    <button id="zimit" class="btn btn-primary btn-lg" type="button">Zim it!</button>
 </form>
+</div>
 
+<div id="infodiv" class="hidden">
+    <p id="info" class="bg-info alert alert-info"></p>
+    <pre id="status">
+    Sending request..
+    </pre>
+</div>
+<button type="button" class="btn btn-lg btn-success hidden">Download Zim file</button>
+
+<script>
+$('#zimit').click(function(){
+        $("#formdiv").removeClass("show").addClass("hidden");
+        //post the request
+        $.post(
+            "/",
+            {
+                title: $('#title').val(),
+                list: $('#list').val()
+            },
+            function(resp){
+                $("#info").text("Your pages are being downloaded and packed as zim. Kindly wait.");
+                $("#infodiv").removeClass("hidden").addClass("show");
+                $("#status").append(resp);
+            });
+
+});
+</script>
 
 {% endblock %}
