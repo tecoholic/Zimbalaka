@@ -77,7 +77,7 @@ def download_file(title):
     f.close()
     return htmlname
 
-def zimit(titles):
+def zimit(title, articles):
     """Prepare a zim file for the given title using zimwriterfs command line tool
 
     Usage: zimwriterfs [mandatory arguments] [optional arguments] HTML_DIRECTORY ZIM_FILE
@@ -107,7 +107,7 @@ def zimit(titles):
                 </ol>
         </body>
         </html>''')
-    for title in titles.split('\n'):
+    for title in articles.split('\n'):
         htmlfile = download_file(title)
         pq(index('ol')).append('<li><a href="'+os.path.split(htmlfile)[1]+'">'+title+"</a></li>")
     f = open(os.path.join(dloc,'index.html'), 'w')
@@ -124,8 +124,10 @@ def zimit(titles):
     zimfile = os.path.join(dloc, title+".zim")
     command = "/usr/local/bin/zimwriterfs -w "+w+" -f "+f+" -l "+l+" -t "+t+" -d "+d+" -c "+c+" -p "+p+" "+directory+" "+zimfile
     call(command, shell=True)
-    #print zimfile
-    return zimfile
+    newzim = "static/"+os.path.split(zimfile)[1]
+    shutil.copy(zimfile, newzim)
+    print newzim #TODO Fix the following
+    return newzim
 
 
 if __name__ == "__main__":

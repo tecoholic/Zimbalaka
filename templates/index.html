@@ -25,7 +25,7 @@
 
 <script>
 function updateDownload(resp){
-    $.getJSON("/status/"+resp.task, function(d){
+    $.getJSON("./status/"+resp.task, function(d){
         if(d.status==="success"){
             $('#download').data("task", resp.task).removeClass("hidden").addClass("show");
         } else {
@@ -37,14 +37,14 @@ function updateDownload(resp){
 }
 
 $('#download').click(function(){
-        window.location = "/download/"+$(this).data('task')+"/"+$('#title').val()+".zim";
+        window.location = "./download/"+$(this).data('task')+"/"+$('#title').val()+".zim";
 });
 
 $('#zimit').click(function(){
         $("#formdiv").removeClass("show").addClass("hidden");
         //post the request
         $.post(
-            "/",
+            "./",
             {
                 title: $('#title').val(),
                 list: $('#list').val()

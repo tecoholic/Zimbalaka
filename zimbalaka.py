@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template, url_for, \
-        send_file, jsonify, make_response
+        send_file, jsonify, make_response, send_from_directory
 from celery import Celery
 
 from utils import zimit
@@ -7,6 +7,7 @@ from utils import zimit
 app = Flask(__name__)
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.use_x_sendfile = True
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
@@ -14,7 +15,7 @@ celery.conf.update(app.config)
 @celery.task
 def prepare_zim(title, articles):
     '''task that prepares the zim file'''
-    zimfile = zimit(articles)
+    zimfile = zimit(title, articles)
     return zimfile
 
 @celery.task
