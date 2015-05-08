@@ -107,9 +107,10 @@ def zimit(title, articles):
                 </ol>
         </body>
         </html>''')
-    for title in articles.split('\n'):
-        htmlfile = download_file(title)
-        pq(index('ol')).append('<li><a href="'+os.path.split(htmlfile)[1]+'">'+title+"</a></li>")
+    for title in articles.strip().split('\n'):
+        if title:
+            htmlfile = download_file(title)
+            pq(index('ol')).append('<li><a href="'+os.path.split(htmlfile)[1]+'">'+title+"</a></li>")
     f = open(os.path.join(dloc,'index.html'), 'w')
     f.write(index.html())
     f.close()
@@ -124,8 +125,10 @@ def zimit(title, articles):
     zimfile = os.path.join(dloc, title+".zim")
     command = "/usr/local/bin/zimwriterfs -w "+w+" -f "+f+" -l "+l+" -t "+t+" -d "+d+" -c "+c+" -p "+p+" "+directory+" "+zimfile
     call(command, shell=True)
-    newzim = "static/"+os.path.split(zimfile)[1]
+    tmpdir, zim = os.path.split(zimfile)
+    newzim = "static/zim/"+zim
     shutil.copy(zimfile, newzim)
+    shutil.rmtree(tmpdir)
     print newzim #TODO Fix the following
     return newzim
 

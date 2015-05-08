@@ -3,11 +3,11 @@ from flask import Flask, request, render_template, url_for, \
 from celery import Celery
 
 from utils import zimit
+import os
 
 app = Flask(__name__)
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
-app.use_x_sendfile = True
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
@@ -18,10 +18,10 @@ def prepare_zim(title, articles):
     zimfile = zimit(title, articles)
     return zimfile
 
-@celery.task
-def delete_tmp_folder(zimfile):
+@celery.task(ignore_result=True)
+def delete_zim(zimfile):
     '''task to delete the folder'''
-    pass
+    os.remove(zimfile)
 
 @app.route("/", methods=['POST', 'GET'])
 def index():
@@ -45,8 +45,10 @@ def download(task_id,filename):
     task = prepare_zim.AsyncResult(task_id)
     if task.state != 'SUCCESS':
         return "Unavailable! Task ID: "+task_id
-    return send_file(task.result)
-
+    res = task.result
+    # TODO find a way to delete the file after sometime. The following line doesn't work
+    #delete_zim.apply_async(res, countdown=20)
+    return send_file(res)
 
 
 if __name__ == "__main__":
