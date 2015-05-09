@@ -56,7 +56,4 @@ docs/_build/
 # PyBuilder
 target/
 
-# Configuration files
-*.conf
-
 static/zim/*.zim
