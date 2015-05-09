@@ -46,11 +46,11 @@ def download(task_id,filename):
     if task.state != 'SUCCESS':
         return "Unavailable! Task ID: "+task_id
     res = task.result
-    delete_zim.apply_async([res], countdown=3600)
+    delete_zim.apply_async([res], countdown=3540)
     try:
         return send_file(res)
     except IOError:
-        return 'The file you have requested has been deleted from the server. Zim files are stored only for 1 hour.'
+        return 'The file you have requested has been deleted from the server. Zim files are stored only for 59 minutes.'
 
 
 if __name__ == "__main__":

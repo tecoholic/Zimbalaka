@@ -58,3 +58,5 @@ target/
 
 # Configuration files
 *.conf
+
+static/zim/*.zim
