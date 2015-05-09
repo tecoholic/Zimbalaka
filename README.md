@@ -18,12 +18,12 @@ A Flask app to generate OpenZim files from select Wikipedia pages
 6. `pip install -r requirements.txt`
 7. Download, build. install and run redis.
 
-    wget http://download.redis.io/releases/redis-3.0.1.tar.gz
-    tar xzf redis-3.0.1.tar.gz
-    cd redis-3.0.1
-    make && make install
-    ./utils/install_server.sh # maintain defaults except datastore location
-    cd ..
+        wget http://download.redis.io/releases/redis-3.0.1.tar.gz
+        tar xzf redis-3.0.1.tar.gz
+        cd redis-3.0.1
+        make && make install
+        ./utils/install_server.sh # maintain defaults except datastore location
+        cd ..
 
 7. Put `zimwriterfs` somewhere or compile and install
 8. Edit path in `celery.conf`
