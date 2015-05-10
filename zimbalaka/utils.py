@@ -7,7 +7,7 @@ import tempfile
 import shutil
 from subprocess import call
 from pyquery import PyQuery as pq
-
+from .default_settings import assets, static, zimwriterfs
 
 dloc = tempfile.mkdtemp()
 baseurl = "http://en.wikipedia.org"
@@ -48,8 +48,7 @@ def clean_page(html):
         doc.remove(sec.strip())
     # add the styles
     if not os.path.isfile(os.path.join(dloc,"assets","style1.css")):
-        shutil.copytree(os.path.join( os.path.dirname(__file__), 'assets'),
-                os.path.join( dloc,'assets') ) # copt the stylesheets to the tmp folder
+        shutil.copytree(assets, os.path.join( dloc,'assets') ) # copt the stylesheets to the tmp folder
     doc('head').append('<link rel="stylesheet" href="assets/style1.css" type="text/css">')
     doc('head').append('<link rel="stylesheet" href="assets/style2.css" type="text/css">')
     # place the images
@@ -124,12 +123,12 @@ def zimit(title, articles):
     p = "'Zimbalaka 1.0'"
     directory = dloc
     zimfile = os.path.join(dloc, title+".zim")
-    command = "/usr/local/bin/zimwriterfs -w "+w+" -f "+f+" -l "+l+" -t "+t+" -d "+d+" -c "+c+" -p "+p+" "+directory+" "+zimfile
+    command = zimwriterfs+" -w "+w+" -f "+f+" -l "+l+" -t "+t+" -d "+d+" -c "+c+" -p "+p+" "+directory+" "+zimfile
     call(command, shell=True)
-    tmpdir, zim = os.path.split(zimfile)
-    newzim = os.path.join( os.path.dirname( __file__ ), 'static', 'zim', zim)
+    newzim = os.path.join( static, 'zim', title+".zim")
     shutil.copy(zimfile, newzim)
-    shutil.rmtree(tmpdir)
+    print 'Removing tmp dir ', dloc
+    shutil.rmtree(dloc)
     print newzim #TODO Fix the following
     return newzim
 
