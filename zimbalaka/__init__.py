@@ -6,8 +6,8 @@ from utils import zimit
 import os
 
 app = Flask(__name__)
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config.from_object('zimbalaka.default_settings')
+# app.config.from_envvar('ZIMBALAKA_SETTINGS') # used for loading production config
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
@@ -52,7 +52,3 @@ def download(task_id,filename):
     except IOError:
         return 'The file you have requested has been deleted from the server. Zim files are stored only for 59 minutes.'
 
-
-if __name__ == "__main__":
-    app.debug = True
-    app.run()

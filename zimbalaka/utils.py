@@ -48,7 +48,8 @@ def clean_page(html):
         doc.remove(sec.strip())
     # add the styles
     if not os.path.isfile(os.path.join(dloc,"assets","style1.css")):
-        shutil.copytree("assets", dloc+'/assets') # copt the stylesheets to the tmp folder
+        shutil.copytree(os.path.join( os.path.dirname(__file__), 'assets'),
+                os.path.join( dloc,'assets') ) # copt the stylesheets to the tmp folder
     doc('head').append('<link rel="stylesheet" href="assets/style1.css" type="text/css">')
     doc('head').append('<link rel="stylesheet" href="assets/style2.css" type="text/css">')
     # place the images
@@ -126,7 +127,7 @@ def zimit(title, articles):
     command = "/usr/local/bin/zimwriterfs -w "+w+" -f "+f+" -l "+l+" -t "+t+" -d "+d+" -c "+c+" -p "+p+" "+directory+" "+zimfile
     call(command, shell=True)
     tmpdir, zim = os.path.split(zimfile)
-    newzim = "static/zim/"+zim
+    newzim = os.path.join( os.path.dirname( __file__ ), 'static', 'zim', zim)
     shutil.copy(zimfile, newzim)
     shutil.rmtree(tmpdir)
     print newzim #TODO Fix the following
@@ -137,4 +138,4 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print "insufficient params"
     else:
-        zimit(sys.argv[1])
+        zimit(sys.argv[1], sys.argv[2])
