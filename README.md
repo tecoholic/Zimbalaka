@@ -1,4 +1,4 @@
-# zimbalaka
+# Zimbalaka
 A Flask app to generate OpenZim files from select Wikipedia pages
 
 ### Pre-requisites
@@ -11,8 +11,8 @@ A Flask app to generate OpenZim files from select Wikipedia pages
 ### Deploying on Ubuntu with apache2 and mod_wsgi
 
 1. `sudo apt-get install libzim-dev libxml2-dev libxslt-dev python-dev zlib1g-dev python-pip python-virtualenv libapache2-mod-wsgi`
-2. `git clone https://github.com/tecoholic/zimbalaka.git`
-3. `cd zimbalaka`
+2. `git clone https://github.com/tecoholic/Zimbalaka.git`
+3. `cd Zimbalaka`
 4. `virtualenv env`
 5. `. env/bin/activate`
 6. `pip install -r requirements.txt`
@@ -26,6 +26,7 @@ A Flask app to generate OpenZim files from select Wikipedia pages
         cd ..
 
 7. Put `zimwriterfs` somewhere or compile and install
+8. Edit `zimbalaka/default_settings.py` to reflect your production environment
 8. Edit path in `celery.conf`
 9. Run supervisord `supervisord -c supervisord.conf`
 10. `mkdir /var/www/zimbalaka`

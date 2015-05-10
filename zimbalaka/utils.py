@@ -5,6 +5,7 @@ import urllib2
 import hashlib
 import tempfile
 import shutil
+import re
 from subprocess import call
 from pyquery import PyQuery as pq
 from .default_settings import assets, static, zimwriterfs
@@ -107,13 +108,19 @@ def zimit(title, articles):
                 </ol>
         </body>
         </html>''')
-    for title in articles.strip().split('\n'):
-        if title:
-            htmlfile = download_file(title)
-            pq(index('ol')).append('<li><a href="'+os.path.split(htmlfile)[1]+'">'+title+"</a></li>")
+    # Sanity check title
+    title = re.sub('\W','_',title)
+
+    # download the list of articles
+    for article in articles.strip().split('\n'):
+        if article:
+            htmlfile = download_file(article)
+            pq(index('ol')).append('<li><a href="'+os.path.split(htmlfile)[1]+'">'+article+"</a></li>")
     f = open(os.path.join(dloc,'index.html'), 'w')
     f.write(index.html())
     f.close()
+
+    # build the parameters for zimwriterfs
     w = "index.html" # change this when packaging more than 1 file
     f = os.path.join("assets","wiki_w.png")
     l = "en" # change this when multiple languages are supported
