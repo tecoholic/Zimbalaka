@@ -8,6 +8,7 @@ SECRET_KEY = 'development key'
 # NOTE Change this if you want to use a different broker
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_TASK_SERIALIZER = 'json'
 
 import os
 # Utility Script locations
