@@ -78,7 +78,7 @@ def download_file(dloc, title):
     f.close()
     return htmlname
 
-def zimit(title, articles):
+def zimit(title, articles, logger):
     """Prepare a zim file for the given title using zimwriterfs command line tool
 
     Usage: zimwriterfs [mandatory arguments] [optional arguments] HTML_DIRECTORY ZIM_FILE
@@ -112,15 +112,20 @@ def zimit(title, articles):
     # Sanity check title
     title = re.sub('\W','_',title)
 
+    articlist = articles.strip().split('\n')
     # download the list of articles
-    for article in articles.strip().split('\n'):
+    for i, article in enumerate(articlist):
         if article:
+            # The redis logger to log the article and the count
+            logger.log(article)
+            logger.count(i*100/len(articlist))
             htmlfile = download_file(dloc, article)
             pq(index('ol')).append('<li><a href="'+os.path.split(htmlfile)[1]+'">'+article+"</a></li>")
     f = open(os.path.join(dloc,'index.html'), 'w')
     f.write(index.html())
     f.close()
 
+    logger.log("Creating your Zim file")
     # build the parameters for zimwriterfs
     w = "index.html" # change this when packaging more than 1 file
     f = os.path.join("assets","wiki_w.png")

@@ -9,6 +9,7 @@ SECRET_KEY = 'development key'
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['pickle','json', 'msgpack', 'yaml']
+CELERY_TRACK_STARTED = True
 
 import os.path
 # Utility Script locations

@@ -1,3 +1,5 @@
+import redis
+
 from zimbalaka import app
 from zimbalaka.tasks import prepare_zim, delete_zim
 
@@ -15,11 +17,27 @@ def index():
 @app.route("/status/<task_id>")
 def status(task_id):
     task = prepare_zim.AsyncResult(task_id)
+    r = redis.StrictRedis(host='localhost', port=6379, db=0)
+    msgkey = 'task:{0}:log'.format(task_id)
+    countkey = 'task:{0}:count'.format(task_id)
     if task.state == 'SUCCESS':
-        return jsonify({
-            "status" : "success"
+        r.delete(msgkey, countkey)
+        return jsonify( {"status" : "success"} )
+    elif task.state == 'PENDING':
+        return jsonify( {"status" : "pending"} )
+    elif task.state == 'STARTED':
+        msg = r.get(msgkey)
+        count = r.get(countkey)
+        return jsonify({ "status" : "started",
+            "msg" : msg,
+            "count" : count
             })
-    return jsonify({ "status" : "pending" })
+    elif task.state == 'RETRY':
+        return jsonify({ "status" : "retry" })
+    else:
+        msg = r.get(msgkey)
+        r.delete(msgkey, countkey)
+        return jsonify({ "status" : "failure", "msg" : msg })
 
 @app.route("/download/<task_id>/<filename>")
 def download(task_id,filename):
