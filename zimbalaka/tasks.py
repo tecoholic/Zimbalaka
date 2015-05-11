@@ -13,5 +13,3 @@ def prepare_zim(title, articles):
 def delete_zim(zimfile):
     '''task to delete the folder'''
     os.remove(zimfile)
-
-

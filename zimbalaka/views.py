@@ -7,7 +7,6 @@ from flask import request, render_template, url_for, \
 @app.route("/", methods=['POST', 'GET'])
 def index():
     if request.method == 'GET':
-        logger.error('Home page requested')
         return render_template('index.html')
     if request.method == 'POST':
         task = prepare_zim.delay(request.form['title'], request.form['list'])

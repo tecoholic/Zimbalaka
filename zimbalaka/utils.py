@@ -8,12 +8,12 @@ import shutil
 import re
 from subprocess import call
 from pyquery import PyQuery as pq
-from .default_settings import assets, static, zimwriterfs
 
-dloc = tempfile.mkdtemp()
+from zimbalaka.default_settings import assets, static, zimwriterfs
+
 baseurl = "http://en.wikipedia.org"
 
-def download_image(url):
+def download_image(dloc, url):
     """Download the image from the given url and add it to the assets"""
     url = "http:"+url
     opener = urllib2.build_opener()
@@ -34,7 +34,7 @@ def download_image(url):
     f.close()
     return filename
 
-def clean_page(html):
+def clean_page(dloc, html):
     """Cleans the html read from the url opener"""
     doc = pq(html)
     #To remove other sections, add the class or id of the section below
@@ -54,7 +54,7 @@ def clean_page(html):
     doc('head').append('<link rel="stylesheet" href="assets/style2.css" type="text/css">')
     # place the images
     for image in doc('img'):
-        localfile = download_image(pq(image).attr('src'))
+        localfile = download_image(dloc, pq(image).attr('src'))
         pq(image).attr('src', localfile)
     # fix the links
     for link in doc('a'):
@@ -62,7 +62,7 @@ def clean_page(html):
         pq(link).attr('href', absolute)
     return doc.html().encode("utf-8")
 
-def download_file(title):
+def download_file(dloc, title):
     """Downloads the file from wikipedia with all the associated files"""
     url = baseurl + '/wiki/' + urllib.quote( title.encode('utf-8') )
     opener = urllib2.build_opener()
@@ -71,7 +71,7 @@ def download_file(title):
     infile = opener.open(url)
     page = infile.read()
     # clean the page now
-    page = clean_page(page)
+    page = clean_page(dloc, page)
     htmlname = os.path.join(dloc, title + ".html")
     f = open(htmlname, 'w')
     f.write(page)
@@ -99,6 +99,7 @@ def zimit(title, articles):
         zimwriterfs --welcome=index.html --favicon=m/favicon.png --language=fra --title=foobar --description=mydescription \
                 --creator=Wikipedia --publisher=Kiwix ./my_project_html_directory my_project.zim
     """
+    dloc = tempfile.mkdtemp()
     print 'zimit has been called'
     index = pq('''<html><head>
         <title>WelcomeePage</title>
@@ -114,7 +115,7 @@ def zimit(title, articles):
     # download the list of articles
     for article in articles.strip().split('\n'):
         if article:
-            htmlfile = download_file(article)
+            htmlfile = download_file(dloc, article)
             pq(index('ol')).append('<li><a href="'+os.path.split(htmlfile)[1]+'">'+article+"</a></li>")
     f = open(os.path.join(dloc,'index.html'), 'w')
     f.write(index.html())
@@ -130,7 +131,8 @@ def zimit(title, articles):
     p = "'Zimbalaka 1.0'"
     directory = dloc
     zimfile = os.path.join(dloc, title+".zim")
-    command = zimwriterfs+" -w "+w+" -f "+f+" -l "+l+" -t "+t+" -d "+d+" -c "+c+" -p "+p+" "+directory+" "+zimfile
+    command = "{0} -w {1} -f {2} -l {3} -t {4} -d {5} -c {6} -p {7} {8} {9}".format(
+                     zimwriterfs, w, f, l, t, d, c, p, directory, zimfile )
     call(command, shell=True)
     newzim = os.path.join( static, 'zim', title+".zim")
     shutil.copy(zimfile, newzim)
