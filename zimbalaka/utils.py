@@ -29,9 +29,8 @@ def download_image(dloc, url):
     m.update(parts[-1].encode("utf-8"))
     md5name = m.hexdigest()[0:8]
     filename = os.path.join("assets", md5name + "." + ext)
-    f = open(os.path.join(dloc,filename), 'w')
-    f.write(infile.read())
-    f.close()
+    with open(os.path.join(dloc,filename), 'w') as f:
+        f.write(infile.read())
     return filename
 
 def clean_page(dloc, html):
@@ -73,9 +72,8 @@ def download_file(dloc, title):
     # clean the page now
     page = clean_page(dloc, page)
     htmlname = os.path.join(dloc, title + ".html")
-    f = open(htmlname, 'w')
-    f.write(page)
-    f.close()
+    with open(htmlname, 'w') as f:
+        f.write(page)
     return htmlname
 
 def zimit(title, articles, logger):
@@ -101,49 +99,48 @@ def zimit(title, articles, logger):
     """
     dloc = tempfile.mkdtemp()
     print 'zimit has been called'
-    index = pq('''<html><head>
-        <title>WelcomeePage</title>
-        </head>
-        <body>
-                <ol>
-                </ol>
-        </body>
+    index = pq('''<html><head><title>Welcome Page</title></head>
+        <body><ol></ol></body>
         </html>''')
-    # Sanity check title
-    title = re.sub('\W','_',title)
 
-    articlist = articles.strip().split('\n')
     # download the list of articles
+    articlist = articles.strip().split('\n')
     for i, article in enumerate(articlist):
         if article:
             # The redis logger to log the article and the count
             logger.log(article)
             logger.count(i*100/len(articlist))
-            htmlfile = download_file(dloc, article)
-            pq(index('ol')).append('<li><a href="'+os.path.split(htmlfile)[1]+'">'+article+"</a></li>")
-    f = open(os.path.join(dloc,'index.html'), 'w')
-    f.write(index.html())
-    f.close()
+            try:
+                htmlfile = download_file(dloc, article)
+                pq(index('ol')).append('<li><a href="'+os.path.split(htmlfile)[1]+'">'+article+"</a></li>")
+            except (urllib2.URLError, urllib2.HTTPError) as e:
+                logger.log(str(e))
+                print e
+                shutil.rmtree(dloc)
+                return False
+    with open(os.path.join(dloc,'index.html'), 'w') as f:
+        f.write(index.html())
 
     logger.log("Creating your Zim file")
     # build the parameters for zimwriterfs
     w = "index.html" # change this when packaging more than 1 file
     f = os.path.join("assets","wiki_w.png")
     l = "en" # change this when multiple languages are supported
-    t = title
+    # Sanity check title
+    t = re.sub('\W','_',title)
     d = "'Wikipedia article on " + title +"'"
     c = "'Wikipedia Contributors'"
     p = "'Zimbalaka 1.0'"
     directory = dloc
-    zimfile = os.path.join(dloc, title+".zim")
+    zimfile = os.path.join(dloc, t+".zim")
     command = "{0} -w {1} -f {2} -l {3} -t {4} -d {5} -c {6} -p {7} {8} {9}".format(
                      zimwriterfs, w, f, l, t, d, c, p, directory, zimfile )
     call(command, shell=True)
-    newzim = os.path.join( static, 'zim', title+".zim")
+    newzim = os.path.join( static, 'zim', t+".zim")
     shutil.copy(zimfile, newzim)
     print 'Removing tmp dir ', dloc
     shutil.rmtree(dloc)
-    print newzim #TODO Fix the following
+    print newzim
     return newzim
 
 

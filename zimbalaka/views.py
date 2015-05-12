@@ -18,26 +18,14 @@ def index():
 def status(task_id):
     task = prepare_zim.AsyncResult(task_id)
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
-    msgkey = 'task:{0}:log'.format(task_id)
-    countkey = 'task:{0}:count'.format(task_id)
-    if task.state == 'SUCCESS':
-        r.delete(msgkey, countkey)
-        return jsonify( {"status" : "success"} )
-    elif task.state == 'PENDING':
-        return jsonify( {"status" : "pending"} )
-    elif task.state == 'STARTED':
-        msg = r.get(msgkey)
-        count = r.get(countkey)
-        return jsonify({ "status" : "started",
-            "msg" : msg,
-            "count" : count
-            })
-    elif task.state == 'RETRY':
-        return jsonify({ "status" : "retry" })
-    else:
-        msg = r.get(msgkey)
-        r.delete(msgkey, countkey)
-        return jsonify({ "status" : "failure", "msg" : msg })
+    msg = r.get( 'task:{0}:log'.format(task_id) )
+    count = r.get( 'task:{0}:count'.format(task_id) )
+    status = task.state
+    if task.state == 'SUCCESS' or task.state == 'FAILURE':
+        r.delete('task:{0}:log'.format(task_id),  'task:{0}:count'.format(task_id) )
+    if task.state == 'SUCCESS' and not task.result:
+        status = 'FAILURE'
+    return jsonify( status=status, msg=msg, count=count )
 
 @app.route("/download/<task_id>/<filename>")
 def download(task_id,filename):

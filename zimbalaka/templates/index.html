@@ -15,6 +15,7 @@
 </form>
 </div>
 <div id="infodiv" class="hidden">
+    <hr/>
     <p id="info" class="bg-info alert alert-info"></p>
     <div class="progress">
       <div class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
@@ -28,27 +29,33 @@
 <script>
 function updateDownload(resp){
     $.getJSON("./status/"+resp.task, function(d){
-        if(d.status==="success"){
-            $('.progress-bar').attr("style", "width:100%").attr("aria-valuenow", d.count);
-            $('#download').data("task", resp.task).removeClass("hidden").addClass("show");
-        }
-        else if( d.status === "started" ) {
-            $('.progress-bar').attr("style", "width:"+d.count+"%").attr("aria-valuenow", d.count);
-                $('#status').text("Processing: "+d.msg);
-                setTimeout(function(){ updateDownload(resp);  }, 2000);
-        }else if( d.status === "retry" | d.status === "failure"){
-                $(".progress-bar-success").removeClass("progress-bar-success").addClass("progress-bar-danger");
-                $('#status').text("The pages couldn't be zimmed. Sorry YO!");
-                alert("There was some error with your request. Request has failed.");
-        }else if( d.status === "pending"){
-                setTimeout(function(){ updateDownload(resp);  }, 2000);
-                $('#status').text("Your request is waiting in the queue..");
-        }
+            switch(d.status){
+                case 'STARTED':
+                        $('.progress-bar').attr("style", "width:"+d.count+"%").attr("aria-valuenow", d.count);
+                        $('#status').text("Processing: "+d.msg);
+                        setTimeout(function(){ updateDownload(resp);  }, 2000);
+                        break;
+                case 'PENDING':
+                        $('#status').text("Your request is waiting in the queue..");
+                        setTimeout(function(){ updateDownload(resp);  }, 2000);
+                        break;
+                case 'SUCCESS':
+                        $('.progress-bar').attr("style", "width:100%").attr("aria-valuenow", d.count);
+                        $('#download').data("task", resp.task).removeClass("hidden").addClass("show");
+                        break;
+                case 'RETRY':
+                        $('#status').text("Your request failed. Don't worry Yo. We are trying again for you.");
+                        setTimeout(function(){ updateDownload(resp);  }, 2000);
+                        break;
+                case 'FAILURE':
+                        $('#status').text("Oops!!! Sorry. Something bad happened to me.\n"+d.msg);
+                        break;
+            }
     });
 }
 
 $('#download').click(function(){
-        window.location = "./download/"+$(this).data('task')+"/"+$('#title').val()+".zim";
+        window.open("./download/"+$(this).data('task')+"/"+$('#title').val()+".zim");
 });
 
 $('#zimit').click(function(){
@@ -65,7 +72,8 @@ $('#zimit').click(function(){
                 $("#infodiv").removeClass("hidden").addClass("show");
                 updateDownload(resp);
         });
-        $("#formdiv").removeClass("show").addClass("hidden");
+        $("#zimit").attr("disabled", "disabled");
+        $('#formdiv').removeClass("show").addClass("hidden");
     }
 });
 
