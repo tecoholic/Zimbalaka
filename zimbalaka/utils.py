@@ -40,7 +40,8 @@ def clean_page(dloc, html, baseurl):
     #mw-navigation,#footer,script,.suggestions,#siteSub,#contentSub,#jump-to-nav,
     .hatnote,.reference,.ambox,.portal,#Notes,.reflist,#References,.refbegin,
     #printfooter,#catlinks,.visualClear,#mw-indicator-pp-default,#toc,.mw-editsection,
-    .navbox,.sistersitebox,link,#coordinates,.references,sup.no#print,.stub
+    .navbox,.sistersitebox,link,#coordinates,.references,sup.no#print,.stub,#stub,
+    .metadata
     """
     seclist = sections.split(",")
     for sec in seclist:
@@ -117,11 +118,11 @@ def zimit(title, articles, lang, logger):
     for i, article in enumerate(articlist):
         if article:
             # The redis logger to log the article and the count
-            logger.log(article)
+            logger.log(article.strip())
             logger.count(i*100/len(articlist))
             try:
-                htmlfile = download_file(dloc, article, baseurl)
-                link = u'<li><a href="{0}">{1}</a></li>'.format(os.path.split(htmlfile)[1], article)
+                htmlfile = download_file(dloc, article.strip(), baseurl)
+                link = u'<li><a href="{0}">{1}</a></li>'.format(os.path.split(htmlfile)[1], article.strip())
                 print link
                 pq(index(u'ol')).append(link)
             except (urllib2.URLError, urllib2.HTTPError) as e:
