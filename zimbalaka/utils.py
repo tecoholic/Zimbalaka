@@ -6,14 +6,13 @@ import hashlib
 import tempfile
 import shutil
 import re
+import codecs
 from subprocess import call
 from pyquery import PyQuery as pq
 
 from zimbalaka.default_settings import assets, static, zimwriterfs
 
-baseurl = "http://en.wikipedia.org"
-
-def download_image(dloc, url):
+def download_image(dloc, url, baseurl):
     """Download the image from the given url and add it to the assets"""
     url = "http:"+url
     opener = urllib2.build_opener()
@@ -33,7 +32,7 @@ def download_image(dloc, url):
         f.write(infile.read())
     return filename
 
-def clean_page(dloc, html):
+def clean_page(dloc, html, baseurl):
     """Cleans the html read from the url opener"""
     doc = pq(html)
     #To remove other sections, add the class or id of the section below
@@ -53,7 +52,7 @@ def clean_page(dloc, html):
     doc('head').append('<link rel="stylesheet" href="assets/style2.css" type="text/css">')
     # place the images
     for image in doc('img'):
-        localfile = download_image(dloc, pq(image).attr('src'))
+        localfile = download_image(dloc, pq(image).attr('src'), baseurl)
         pq(image).attr('src', localfile)
     # fix the links
     for link in doc('a'):
@@ -61,22 +60,22 @@ def clean_page(dloc, html):
         pq(link).attr('href', absolute)
     return doc.html().encode("utf-8")
 
-def download_file(dloc, title):
+def download_file(dloc, title, baseurl):
     """Downloads the file from wikipedia with all the associated files"""
     url = baseurl + '/wiki/' + urllib.quote( title.encode('utf-8') )
     opener = urllib2.build_opener()
     opener.addheaders = [('User-agent', 'Zimbalaka/1.0 based on OpenZim')]
-    #print "Opening .. ", url
+    print "Opening .. ", url
     infile = opener.open(url)
     page = infile.read()
     # clean the page now
-    page = clean_page(dloc, page)
+    page = clean_page(dloc, page, baseurl)
     htmlname = os.path.join(dloc, title + ".html")
     with open(htmlname, 'w') as f:
         f.write(page)
     return htmlname
 
-def zimit(title, articles, logger):
+def zimit(title, articles, lang, logger):
     """Prepare a zim file for the given title using zimwriterfs command line tool
 
     Usage: zimwriterfs [mandatory arguments] [optional arguments] HTML_DIRECTORY ZIM_FILE
@@ -98,10 +97,20 @@ def zimit(title, articles, logger):
                 --creator=Wikipedia --publisher=Kiwix ./my_project_html_directory my_project.zim
     """
     dloc = tempfile.mkdtemp()
+    baseurl = 'http://{0}.wikipedia.org'.format(lang)
     print 'zimit has been called'
-    index = pq('''<html><head><title>Welcome Page</title></head>
-        <body><ol></ol></body>
-        </html>''')
+    index = pq(u'''
+        <!DOCTYPE html>
+        <html lang="{0}">
+        <head>
+                <meta charset="UTF-8">
+                <title>{1}</title>
+        </head>
+        <body>
+                <ol></ol>
+        </body>
+        </html>
+        '''.format(lang, title))
 
     # download the list of articles
     articlist = articles.strip().split('\n')
@@ -111,35 +120,37 @@ def zimit(title, articles, logger):
             logger.log(article)
             logger.count(i*100/len(articlist))
             try:
-                htmlfile = download_file(dloc, article)
-                pq(index('ol')).append('<li><a href="'+os.path.split(htmlfile)[1]+'">'+article+"</a></li>")
+                htmlfile = download_file(dloc, article, baseurl)
+                link = u'<li><a href="{0}">{1}</a></li>'.format(os.path.split(htmlfile)[1], article)
+                print link
+                pq(index(u'ol')).append(link)
             except (urllib2.URLError, urllib2.HTTPError) as e:
                 logger.log(str(e))
                 print e
                 shutil.rmtree(dloc)
                 return False
-    with open(os.path.join(dloc,'index.html'), 'w') as f:
+    with codecs.open(os.path.join(dloc,'index.html'), mode='w', encoding='utf-8') as f:
         f.write(index.html())
 
     logger.log("Creating your Zim file")
     # build the parameters for zimwriterfs
-    w = "index.html" # change this when packaging more than 1 file
-    f = os.path.join("assets","wiki_w.png")
-    l = "en" # change this when multiple languages are supported
+    w = u"index.html" # change this when packaging more than 1 file
+    f = os.path.join(u"assets",u"wiki_w.png")
+    l = u"en" # change this when multiple languages are supported
     # Sanity check title
-    t = re.sub('\W','_',title)
-    d = "'Wikipedia article on " + title +"'"
-    c = "'Wikipedia Contributors'"
-    p = "'Zimbalaka 1.0'"
+    t = re.sub(u'[\+\-\.\,\!\@\#\$\%\^\&\*\(\)\;\\\/\|\<\>\"\'\{\}\[\]\?\:\=\s]',u'_',title)
+    d = u"'Wikipedia article on " + title +"'"
+    c = u"'Wikipedia Contributors'"
+    p = u"'Zimbalaka 1.0'"
     directory = dloc
     zimfile = os.path.join(dloc, t+".zim")
-    command = "{0} -w {1} -f {2} -l {3} -t {4} -d {5} -c {6} -p {7} {8} {9}".format(
+    command = u"{0} -w {1} -f {2} -l {3} -t {4} -d {5} -c {6} -p {7} {8} {9}".format(
                      zimwriterfs, w, f, l, t, d, c, p, directory, zimfile )
     call(command, shell=True)
-    newzim = os.path.join( static, 'zim', t+".zim")
+    newzim = os.path.join( static, u'zim', t+u".zim")
     shutil.copy(zimfile, newzim)
     print 'Removing tmp dir ', dloc
-    shutil.rmtree(dloc)
+    # shutil.rmtree(dloc)
     print newzim
     return newzim
 

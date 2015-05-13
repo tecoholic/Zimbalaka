@@ -18,10 +18,10 @@ class CLogger:
         self.r.set('task:{0}:count'.format(self.uid), percent)
 
 @celery.task(bind=True)
-def prepare_zim(self, title, articles):
+def prepare_zim(self, title, articles, lang):
     '''task that prepares the zim file'''
     c = CLogger( self.request.id )
-    zimfile = zimit(title, articles, c)
+    zimfile = zimit(title, articles, lang, c)
     return zimfile
 
 @celery.task(ignore_result=True)

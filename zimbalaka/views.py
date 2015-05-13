@@ -11,7 +11,7 @@ def index():
     if request.method == 'GET':
         return render_template('index.html')
     if request.method == 'POST':
-        task = prepare_zim.delay(request.form['title'], request.form['list'])
+        task = prepare_zim.delay(request.form['title'], request.form['list'], request.form['lang'])
         return make_response( jsonify(status="started", task=task.id), 202 )
 
 @app.route("/status/<task_id>")
