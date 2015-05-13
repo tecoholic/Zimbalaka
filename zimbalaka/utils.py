@@ -143,11 +143,11 @@ def zimit(title, articles, lang, logger):
     c = u"'Wikipedia Contributors'"
     p = u"'Zimbalaka 1.0'"
     directory = dloc
-    zimfile = os.path.join(dloc, t+".zim")
+    zimfile = os.path.join(dloc, "output.zim")
     command = u"{0} -w {1} -f {2} -l {3} -t {4} -d {5} -c {6} -p {7} {8} {9}".format(
                      zimwriterfs, w, f, l, t, d, c, p, directory, zimfile )
     call(command, shell=True)
-    newzim = os.path.join( static, u'zim', t+u".zim")
+    newzim = os.path.join( static, 'zim', "output.zim")
     shutil.copy(zimfile, newzim)
     print 'Removing tmp dir ', dloc
     # shutil.rmtree(dloc)
