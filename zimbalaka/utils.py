@@ -160,7 +160,7 @@ def zimit(title, articles, cats, url, logger):
     catlist = []
     for c in cats.strip().split('\n'):
         if c:
-            catlist.append(a.strip())
+            catlist.append(c.strip())
     for cat in catlist:
         logger.log(u"Fetching the list of pages for category: {0}".format(cat))
         got = articles_of_cat(baseurl, cat.strip())
