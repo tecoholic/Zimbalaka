@@ -12,7 +12,7 @@ from pyquery import PyQuery as pq
 
 from zimbalaka.default_settings import assets, static, zimwriterfs
 
-def download_image(dloc, url, baseurl):
+def download_image(dloc, url):
     """Download the image from the given url and add it to the assets"""
     url = "http:"+url
     opener = urllib2.build_opener()
@@ -53,7 +53,7 @@ def clean_page(dloc, html, baseurl):
     doc('head').append('<link rel="stylesheet" href="assets/style2.css" type="text/css">')
     # place the images
     for image in doc('img'):
-        localfile = download_image(dloc, pq(image).attr('src'), baseurl)
+        localfile = download_image(dloc, pq(image).attr('src'))
         pq(image).attr('src', localfile)
     # fix the links
     for link in doc('a'):
@@ -66,7 +66,7 @@ def download_file(dloc, title, baseurl):
     url = baseurl + '/wiki/' + urllib.quote( title.encode('utf-8') )
     opener = urllib2.build_opener()
     opener.addheaders = [('User-agent', 'Zimbalaka/1.0 based on OpenZim')]
-    print "Opening .. ", url
+    # print "Opening .. ", url
     infile = opener.open(url)
     page = infile.read()
     # clean the page now
@@ -76,10 +76,47 @@ def download_file(dloc, title, baseurl):
         f.write(page)
     return htmlname
 
-def zimit(title, articles, lang, logger):
+def parse_xml(xml):
+    pqxml = pq(xml)
+    return [pq(zm).attr('title') for zm in pqxml("cm")]
+
+def get_cmcontinue(xml):
+    pqxml = pq(xml)
+    return pq(pqxml("categorymembers")[0]).attr("cmcontinue")
+
+def articles_of_cat(url, cat):
+    """Fectches the articles in the given category"""
+    query = "/w/api.php?action=query&list=categorymembers&format=xml&cmprop=title&cmnamespace=0&cmtype=page&cmlimit=10&cmtitle="
+    query = query + urllib.quote(cat.encode('utf-8'))
+
+    fullurl = url+query.encode('utf-8')
+    opener = urllib2.build_opener()
+    opener.addheaders = [('User-agent', 'Zimbalaka/1.0 based on OpenZim')]
+    infile = opener.open(fullurl)
+    xml = infile.read()
+    titles = parse_xml(xml)
+    # if the list was incomplete request for more
+    while 'query-continue' in xml:
+        fullurl = url + query + "&cmcontinue=" + get_cmcontinue(xml)
+        infile = opener.open(fullurl)
+        xml = infile.read()
+        titles.extend(parse_xml(xml))
+    return titles
+
+def guess_language(url):
+    # for wikipedia like urls
+    rex = re.compile("(http[s]{0,1}:\/\/)(?P<lang>[\w\d]*)\.([\w\d]*)\.([\w\d]*)")
+    groups = rex.search(url)
+    if groups:
+        return groups.group('lang')
+    return 'en'
+
+
+def zimit(title, articles, cats, url, logger):
     """Prepare a zim file for the given title using zimwriterfs command line tool
 
-    Usage: zimwriterfs [mandatory arguments] [optional arguments] HTML_DIRECTORY ZIM_FILE
+    [Following is NOT function doc]
+    Tool Usage: zimwriterfs [mandatory arguments] [optional arguments] HTML_DIRECTORY ZIM_FILE
 
      Mandatory arguments:
      -w, --welcome      path of default/main HTML page. The path must be relative to HTML_DIRECTORY.
@@ -98,7 +135,9 @@ def zimit(title, articles, lang, logger):
                 --creator=Wikipedia --publisher=Kiwix ./my_project_html_directory my_project.zim
     """
     dloc = tempfile.mkdtemp()
-    baseurl = 'http://{0}.wikipedia.org'.format(lang)
+    baseurl = url
+    lang = guess_language(url)
+    down_count = 0
     print 'zimit has been called'
     index = pq(u'''
         <!DOCTYPE html>
@@ -112,32 +151,56 @@ def zimit(title, articles, lang, logger):
         </body>
         </html>
         '''.format(lang, title))
-
     # download the list of articles
-    articlist = articles.strip().split('\n')
+    articlist = []
+    for a in articles.strip().split('\n'):
+        if a:
+            articlist.append(a.strip())
+    # get the articles for the given categories
+    catlist = []
+    for c in cats.strip().split('\n'):
+        if c:
+            catlist.append(a.strip())
+    for cat in catlist:
+        logger.log(u"Fetching the list of pages for category: {0}".format(cat))
+        got = articles_of_cat(baseurl, cat.strip())
+        logger.log(u"Category {0} has {1} pages".format(cat, len(got)))
+        articlist.extend(got)
+
+    logger.log('Starting download of your articles.')
     for i, article in enumerate(articlist):
-        if article:
-            # The redis logger to log the article and the count
-            logger.log(article.strip())
-            logger.count(i*100/len(articlist))
-            try:
-                htmlfile = download_file(dloc, article.strip(), baseurl)
-                link = u'<li><a href="{0}">{1}</a></li>'.format(os.path.split(htmlfile)[1], article.strip())
-                print link
-                pq(index(u'ol')).append(link)
-            except (urllib2.URLError, urllib2.HTTPError) as e:
-                logger.log(str(e))
-                print e
-                shutil.rmtree(dloc)
-                return False
+        # The redis logger to log the article and the percent of completion
+        logger.log(u"Processing: {0}".format(article))
+        logger.count(i*100/len(articlist))
+        try:
+            htmlfile = download_file(dloc, article.strip(), baseurl)
+            link = u'<li><a href="{0}">{1}</a></li>'.format(os.path.split(htmlfile)[1], article)
+            pq(index(u'ol')).append(link)
+            down_count += 1
+        except urllib2.HTTPError as e:
+            # Just log the HTTP Errors to the user and contnue with the next article
+            logger.log(str(e))
+        except urllib2.URLError as e:
+            logger.log(str(e))
+            print e
+            shutil.rmtree(dloc)
+            return False
+
+    # Make sure we have downloaded at least one article before zimming
+    if not down_count:
+        logger.log("No articles were downloaded.")
+        shutil.rmtree(dloc)
+        return False
+
+
     with codecs.open(os.path.join(dloc,'index.html'), mode='w', encoding='utf-8') as f:
         f.write(index.html())
 
     logger.log("Creating your Zim file")
     # build the parameters for zimwriterfs
-    w = u"index.html" # change this when packaging more than 1 file
+    w = u"index.html" # Welcome page is the index.html - has links to all other pages
     f = os.path.join(u"assets",u"wiki_w.png")
-    l = u"en" # change this when multiple languages are supported
+    l = unicode(lang)
     # Sanity check title
     t = re.sub(u'[\+\-\.\,\!\@\#\$\%\^\&\*\(\)\;\\\/\|\<\>\"\'\{\}\[\]\?\:\=\s]',u'_',title)
     d = u"'Wikipedia article on " + title +"'"

@@ -11,7 +11,10 @@ def index():
     if request.method == 'GET':
         return render_template('index.html')
     if request.method == 'POST':
-        task = prepare_zim.delay(request.form['title'], request.form['list'], request.form['lang'])
+        task = prepare_zim.delay(request.form['title'],
+                request.form['list'],
+                request.form['cats'],
+                request.form['url'])
         return make_response( jsonify(status="started", task=task.id), 202 )
 
 @app.route("/status/<task_id>")
@@ -19,6 +22,7 @@ def status(task_id):
     task = prepare_zim.AsyncResult(task_id)
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
     msg = r.get( 'task:{0}:log'.format(task_id) )
+    r.set('task:{0}:log'.format(task_id), "")
     count = r.get( 'task:{0}:count'.format(task_id) )
     status = task.state
     if task.state == 'SUCCESS' or task.state == 'FAILURE':

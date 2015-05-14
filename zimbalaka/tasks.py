@@ -12,16 +12,16 @@ class CLogger:
         self.uid = uid
 
     def log(self, record):
-        self.r.set( 'task:{0}:log'.format(self.uid), record)
+        self.r.append( 'task:{0}:log'.format(self.uid), record+"\n")
 
     def count(self, percent):
         self.r.set('task:{0}:count'.format(self.uid), percent)
 
 @celery.task(bind=True)
-def prepare_zim(self, title, articles, lang):
+def prepare_zim(self, title, articles, cats, url):
     '''task that prepares the zim file'''
     c = CLogger( self.request.id )
-    zimfile = zimit(title, articles, lang, c)
+    zimfile = zimit(title, articles, cats, url, c)
     return zimfile
 
 @celery.task(ignore_result=True)

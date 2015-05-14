@@ -1,54 +1,108 @@
 {% extends "base.html" %}
 {% block body %}
 
-<div id="formdiv" class="row show">
-<form action="/" method="post" class="form-horizontal">
-    <div class="form-group">
-        <label for="title" class="control-label">Title</label>
-        <input id="title" class="form-control" type="text">
+<div id="formdiv">
+<form class="form-horizontal">
+    <div class="form-group col-sm-12">
+        <label for="title" class="col-sm-2 col-xs-12 control-label">Title of the Zim file</label>
+        <div class="col-sm-10 col-xs-12">
+            <input id="title" class="form-control" type="text">
+        </div>
     </div>
-    <div class="form-group">
-        <label for="lang" class="control-label">Language of Wikipedia</label>
-        <select id="lang" name="language"><option value="en">English</option></select>
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4" for="site">Mediawiki Site</label>
+        <div class="col-sm-8">
+            <select id="site" name="wikisite" class="form-control">
+                <option value="wikipedia">Wikipedia</option>
+                <option value="wikibooks">WikiBooks</option>
+                <option value="wikinews">WikiNews</option>
+                <option value="wikiquote">WikiQuotes</option>
+                <option value="wikisource">WikiSource</option>
+                <option value="wikiversity">Wikiversity</option>
+                <option value="wikivoyage">WikiVoyage</option>
+                <option value="wiktionary">Wiktionary</option>
+                <option value="custom">Other Site</option>
+            </select>
+        </div>
     </div>
-    <div class="form-group">
+    <div class="form-group col-sm-6" id="langdiv">
+        <label for="lang" class="control-label col-sm-4">Language</label>
+        <div class="col-sm-8">
+            <select id="lang" name="language" class="form-control"></select>
+        </div>
+    </div>
+    <div class="form-group col-sm-6" id="urldiv">
+        <label class="control-label col-sm-4" for="url">URL</label>
+        <div class="col-sm-8">
+            <input id="url" class="form-control" type="text" placeholder="http://some.wikisite.org/wiki/">
+        </div>
+    </div>
+    <div class="form-group col-sm-6">
         <label for="list" class="control-label">Titles of the articles</label>
         <textarea rows="10" id="list" class="form-control" placeholder="One per line"></textarea>
+    </div>
+    <div class="form-group col-sm-6 pull-right">
+        <label class="control-label" for="cats">Articles from Category</label>
+        <textarea id="cats" rows="10" class="form-control" placeholder="'Category:Some Catergory' 1 per line"></textarea>
     </div>
     <button id="zimit" class="btn btn-primary btn-lg" type="button">Zim it!</button>
 </form>
 </div>
-<div id="infodiv" class="hidden">
-    <hr/>
+<div id="infodiv">
     <p id="info" class="bg-info alert alert-info"></p>
     <div class="progress">
       <div class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
     </div>
-    <pre id="status">
-    Sending request..
-    </pre>
+    <pre id="status"></pre>
 </div>
-<button id="download" type="button" class="btn btn-lg btn-success hidden">Download Zim file</button>
-
+<div class="row">
+    <div class="col-sm-3">
+    <button id="download" type="button" class="btn btn-lg btn-success hidden">Download Zim file</button>
+    </div>
+    <div class="col-sm-9">
+    <button id="again" type="button" class="btn btn-lg btn-info hidden">Create another Zim</button>
+    </div>
+    <div class="col-sm-4 col-offset-1">
+    <button id="retry" type="button" class="btn btn-lg btn-danger hidden">Retry</button>
+    </div>
+</div>
 <script>
-$.getJSON('{{ url_for("static", filename="wikipedias.json") }}',
+
+function populate_langs(site){
+    $('#lang').empty();
+    $.getJSON('{{ url_for("static", filename="") }}'+site+'.json',
         function(d){
+            // Avoid wrong list being populated due to load time
+        if($('#site').val() === site){
             d.sort(function(a,b){ return a.lang.localeCompare(b.lang);} );
+            $('#lang').append('<option value="en">English</option>');
             for( var i=0; i < d.length; i++){
                 $('#lang').append("<option value="+d[i].prefix+">"+d[i].lang+" | "+d[i].loclang+"</option>");
+                }
             }
         });
+}
+
+var zimbalaka = {};
+zimbalaka.preStatus = "";
+
+function addMsg(msg){
+    if (zimbalaka.preStatus != msg && msg){
+        $('#status').append(document.createTextNode(msg));
+        zimbalaka.preStatus = msg;
+        }
+}
 
 function updateDownload(resp){
     $.getJSON("./status/"+resp.task, function(d){
             switch(d.status){
                 case 'STARTED':
                         $('.progress-bar').attr("style", "width:"+d.count+"%").attr("aria-valuenow", d.count);
-                        $('#status').text("Processing: "+d.msg);
+                        addMsg(d.msg);
                         setTimeout(function(){ updateDownload(resp);  }, 2000);
                         break;
                 case 'PENDING':
-                        $('#status').text("Your request is waiting in the queue..");
+                        addMsg("Your task is waiting in the queue.....")
                         setTimeout(function(){ updateDownload(resp);  }, 2000);
                         break;
                 case 'SUCCESS':
@@ -56,52 +110,110 @@ function updateDownload(resp){
                         $('#download').data("task", resp.task).removeClass("hidden").addClass("show");
                         break;
                 case 'RETRY':
-                        $('#status').text("Your request failed. Don't worry Yo. We are trying again for you.");
+                        addMsg("Your request failed. Don't worry Yo. We are trying again for you.");
                         setTimeout(function(){ updateDownload(resp);  }, 2000);
                         break;
                 case 'FAILURE':
-                        $('#status').text("Oops!!! Sorry. Something bad happened to me.\n"+d.msg);
+                        addMsg("Oops!!! Sorry. Something bad happened to me.\n"+d.msg);
+                        $('#retry').addClass('show').removeClass('hidden');
                         break;
             }
     });
 }
 
+// url div is hidden upon initialization
+$('#urldiv').hide();
+// populate the languages for wikipedia
+populate_langs($('#site').val());
+// hide the info div
+$('#infodiv').hide();
+
 $('#download').click(function(){
         window.open("./download/"+$(this).data('task')+"/"+$('#title').val()+".zim");
+    $('#again').addClass('show').removeClass('hidden');
+
 });
+
+$('#again').click(function(){
+    $('#infodiv').fadeOut("slow", function(){
+        $("#formdiv").fadeIn('slow');
+    });
+    $('#status').text("");
+    $('#title').val("");
+    $('#cats').val("");
+    $('#list').val("");
+    $('#download').addClass('hidden').removeClass('show');
+    $('#again').addClass('hidden').removeClass('show');
+});
+
+$('#retry').click(function(){
+    $('#infodiv').fadeOut("slow", function(){
+        $("#formdiv").fadeIn('slow');
+    });
+    $('#status').text("");
+    $('#retry').addClass('hidden').removeClass('show');
+});
+
+$('#site').change(function(){
+        switch($(this).val()){
+            case 'custom' :
+                $("#langdiv").hide();
+                $("#urldiv").show();
+                break;
+            default:
+                $("#langdiv").show();
+                $("#urldiv").hide();
+                populate_langs($(this).val());
+                break;
+            }
+        });
 
 $('#zimit').click(function(){
     //post the request
     if (validateForm()){
+        var data = {};
+        data.title= $('#title').val();
+        data.list= $('#list').val();
+        data.cats = $('#cats').val();
+        if( $('#site') === 'custom'){
+            data.url = $('#url').val();
+        }else{
+            data.url = 'http://'+$('#lang').val()+'.'+$('#site').val()+'.org';
+        }
         $.post(
-            "./",
-            {
-                title: $('#title').val(),
-                list: $('#list').val(),
-                lang: $('#lang').val()
-            },
+            "./", data,
             function(resp){
                 $("#info").text("Your pages are being downloaded and packed as zim. Kindly wait.");
-                $("#infodiv").removeClass("hidden").addClass("show");
+                $('#formdiv').fadeOut("slow", function(){
+                    $("#infodiv").fadeIn('slow');
+                });
                 updateDownload(resp);
         });
-        $("#zimit").attr("disabled", "disabled");
-        $('#formdiv').removeClass("show").addClass("hidden");
     }
 });
 
 function validateForm(){
-    if( $('#title').val() && $('#list').val() )
+    if( $('#title').val() && ($('#list').val() || $('#cats').val() ))
         return true;
 
        if( !$('#title').val() ){
             $('#title').parent()
-            .addClass('has-error has-feedback')
-            .append("<span class=\"glyphicon glyphicon-remove form-control-feedback\" aria-hidden=\"true\"></span>");
+            .addClass('has-feedback')
+            .append("<span class=\"glyphicon glyphicon-remove form-control-feedback\" aria-hidden=\"true\"></span>")
+            .parent().addClass('has-error');
         }
 
        if( !$('#list').val() ){
-            $('#list').parent().addClass('has-error has-feedback');
+           if( !$('#cats').val() ){
+             $('#list,#cats').parent().addClass('has-feedback has-error');
+           }
+       }
+
+       if( $('#site').val() === 'custom' && !$('#url').val() ){
+            $('#url').parent()
+            .addClass('has-feedback')
+            .append("<span class=\"glyphicon glyphicon-remove form-control-feedback\" aria-hidden=\"true\"></span>")
+            .parent().addClass('has-error');
        }
     alert("There are errors in your input. Kindly fix them and click Zim it!");
     return false;
