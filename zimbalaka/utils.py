@@ -10,7 +10,7 @@ import codecs
 from subprocess import call
 from pyquery import PyQuery as pq
 
-from zimbalaka.default_settings import assets, static, zimwriterfs
+from zimbalaka.default_settings import assets, static, zimwriterfs, tmploc
 
 def download_image(dloc, url):
     """Download the image from the given url and add it to the assets"""
@@ -134,7 +134,7 @@ def zimit(title, articles, cats, url, logger):
         zimwriterfs --welcome=index.html --favicon=m/favicon.png --language=fra --title=foobar --description=mydescription \
                 --creator=Wikipedia --publisher=Kiwix ./my_project_html_directory my_project.zim
     """
-    dloc = tempfile.mkdtemp()
+    dloc = tempfile.mkdtemp(dir=tmploc)
     baseurl = url
     lang = guess_language(url)
     down_count = 0

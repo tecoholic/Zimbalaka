@@ -16,3 +16,4 @@ import os.path
 zimwriterfs = '/usr/local/bin/zimwriterfs'
 assets = os.path.join(os.path.dirname(__file__), 'assets')
 static = os.path.join(os.path.dirname(__file__), 'static')
+tmploc = '/tmp'
