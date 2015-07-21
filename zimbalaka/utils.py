@@ -57,13 +57,17 @@ def clean_page(dloc, html, baseurl):
         pq(image).attr('src', localfile)
     # fix the links
     for link in doc('a'):
-        absolute = baseurl + pq(link).attr('href')
+        # replace wiki from the url as the links start with /wiki/
+        wiki = re.compile('.*/wiki/$')
+        if wiki.match(baseurl):
+            baseurl = baseurl.replace('/wiki/', '')
+        absolute = baseurl+ pq(link).attr('href')
         pq(link).attr('href', absolute)
     return doc.html().encode("utf-8")
 
 def download_file(dloc, title, baseurl):
     """Downloads the file from wikipedia with all the associated files"""
-    url = baseurl + '/wiki/' + urllib.quote( title.encode('utf-8') )
+    url = baseurl+urllib.quote(title.encode('utf-8'))
     opener = urllib2.build_opener()
     opener.addheaders = [('User-agent', 'Zimbalaka/1.0 based on OpenZim')]
     # print "Opening .. ", url
@@ -71,7 +75,7 @@ def download_file(dloc, title, baseurl):
     page = infile.read()
     # clean the page now
     page = clean_page(dloc, page, baseurl)
-    htmlname = os.path.join(dloc, title + ".html")
+    htmlname = os.path.join(dloc, title.split('/')[-1] + ".html")
     with open(htmlname, 'w') as f:
         f.write(page)
     return htmlname
@@ -87,7 +91,13 @@ def get_cmcontinue(xml):
 def articles_of_cat(url, cat):
     """Fectches the articles in the given category"""
     query = "/w/api.php?action=query&list=categorymembers&format=xml&cmprop=title&cmnamespace=0&cmtype=page&cmlimit=10&cmtitle="
-    query = query + urllib.quote(cat.encode('utf-8'))
+    query = query+urllib.quote(cat.encode('utf-8'))
+
+    # remove wiki from the url and api base path is different
+    wiki = re.compile('.*\/wiki\/$')
+    if wiki.match(url):
+        return []
+    url = url.replace('/wiki/', '')
 
     fullurl = url+query.encode('utf-8')
     opener = urllib2.build_opener()
@@ -105,7 +115,7 @@ def articles_of_cat(url, cat):
 
 def guess_language(url):
     # for wikipedia like urls
-    rex = re.compile("(http[s]{0,1}:\/\/)(?P<lang>[\w\d]*)\.([\w\d]*)\.([\w\d]*)")
+    rex = re.compile("(http[s]{0,1}:\/\/)(?P<lang>[\w\d]*)\.([\w\d]*)\.([\w\d]*)\/wiki\/")
     groups = rex.search(url)
     if groups:
         return groups.group('lang')
@@ -212,7 +222,7 @@ def zimit(title, articles, cats, url, logger):
                      zimwriterfs, w, f, l, t, d, c, p, directory, zimfile )
     call(command, shell=True)
     print 'Removing tmp dir '+dloc
-    shutil.rmtree(dloc)
+    #shutil.rmtree(dloc)
     return zimfile
 
 
