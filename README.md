@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/tecoholic/Zimbalaka.png?label=ready&title=Ready)](https://waffle.io/tecoholic/Zimbalaka)
 # Zimbalaka
 A Flask app to generate OpenZim files from select Wikipedia pages
 
