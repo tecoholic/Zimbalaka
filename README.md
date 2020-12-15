@@ -51,7 +51,7 @@ Now the site should be live at `domain/zimbalaka`
 ### Developers
 
 There are a lot of dependencies in this project which can be changed depending on the deployment situation.
-* Server - Perhaps nginx + gunicorn  in palce of apache2+mod_wsgi
+* Server - Perhaps nginx + gunicorn  in place of apache2+mod_wsgi
 * Celery broker - RabbitMQ in place of Redis, or even Amazon Simple Queue Service
 * [Demonizing Celery](http://celery.readthedocs.org/en/latest/tutorials/daemonizing.html) - something in place of supervisor
 
